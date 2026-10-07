@@ -1,86 +1,33 @@
 ---
 name: searching-with-fff
-description: "Searches the current git-indexed directory with fff. Triggers on: file search, grep, multi-pattern grep, find_files, find a path, find a filename."
-compatibility: "fff-mcp on PATH from dmtrKovalenko/fff. stdio MCP. Indexes the git worktree Amp started in."
+description: Use when searching files or code in the current Git worktree, locating definitions or references, finding a remembered filename, or searching multiple identifiers with fff. Not for web searches or general questions unrelated to repository files.
+compatibility: Requires a connected fff stdio MCP server from dmtrKovalenko/fff and a host file-reading tool.
 ---
 
-# Searching with fff
+# Search with fff
 
-Search this git worktree with the fff MCP tools. Load this skill, then call them.
+Use the connected `fff` MCP server for repository search. This community skill is maintained in [IceCodeNew/searching-with-fff](https://github.com/IceCodeNew/searching-with-fff), not by fff upstream.
 
-fff keeps a warm index in one long-lived stdio process.
+## Route by task
 
-## Tools
+| Need | fff tool |
+| --- | --- |
+| Definition, reference, or one content pattern | `grep` |
+| Filename or fuzzy path discovery | `find_files` |
+| Multiple literal identifiers or naming variants, OR matching | `multi_grep` |
 
-| Job | Tool |
-|-----|------|
-| File contents: a definition, identifier, or pattern | `grep` |
-| Path or filename | `find_files` |
-| Several literal identifiers at once, including case and naming variants | `multi_grep` |
+Tool names above are server-local. Select the corresponding tool exposed by the host's fff server; prefixes vary (Claude Code: `mcp__fff__grep`). Never substitute a built-in or shell grep for fff's `grep`.
 
-`grep` when you have a name. `find_files` when you are looking for a file. `multi_grep` when you need OR across literals.
+Read [routing.md](routing.md) for constraints, pagination, or recovery. Match the task, not merely a keyword in prose. Start with `maxResults: 20`, narrow by known directory or file type, then read relevant code with the host's file-reading tool. Read a known path directly; no search is needed.
 
-The search target is this git worktree, including git-aware dirty and untracked annotations.
-
-## Calls
-
-Keep queries to one or two terms.
-
-**Contents** (`grep`):
+Example: send to fff's `multi_grep`:
 
 ```json
-{ "query": "InProgressQuote" }
+{"patterns":["InProgressQuote","in_progress_quote","inProgressQuote"],"constraints":"*.rs","maxResults":20}
 ```
 
-Optional: `maxResults`, `cursor`, `output_mode` (`content`). `pattern` aliases `query`. Constraints go inline before the text: `*.rs InProgressQuote`, `src/ InProgressQuote`.
+## Recovery
 
-**Path** (`find_files`):
+For invalid arguments or query syntax, correct from the error and schema, then retry. If disconnected or unavailable, report the failure and use the host's MCP connection controls to enable/reconnect fff; if unavailable, request restoration. Do not silently switch to built-in search, shell grep/rg, or an ad hoc scanner. For empty results, broaden once; read any relevant known files, otherwise report no match rather than inventing a location.
 
-```json
-{ "query": "mcp.json" }
-```
-
-Optional: `maxResults`, `cursor`. Multiple words narrow. Glob constraints such as `*.md !tests/` are valid.
-
-**Literals OR** (`multi_grep`):
-
-```json
-{ "patterns": ["InProgressQuote", "in_progress_quote"], "constraints": "*.rs" }
-```
-
-Optional: `maxResults`, `cursor`, `output_mode`, `context`. Patterns are literal text.
-
-A `cursor` in the result is the next page. Pass it back only then.
-
-After at most two greps, read the top file.
-
-## Install fff-mcp
-
-Sibling `mcp.json` starts stdio server `fff` as `fff-mcp`.
-
-Linux / macOS:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/dmtrKovalenko/fff/main/install-mcp.sh | bash
-```
-
-Homebrew:
-
-```bash
-brew install dmtrKovalenko/fff/fff-mcp
-```
-
-Windows (PowerShell):
-
-```powershell
-irm https://raw.githubusercontent.com/dmtrKovalenko/fff/main/install-mcp.ps1 | iex
-```
-
-The installer writes `~/.local/bin/fff-mcp` (Homebrew: `$(brew --prefix)/bin/fff-mcp`). Amp needs that directory on `PATH`.
-
-If the binary is missing, run the installer above, then reload skills.
-
-```bash
-command -v fff-mcp
-fff-mcp --version
-```
+Installation and host configuration belong in the [installation guide](https://github.com/IceCodeNew/searching-with-fff#installation), not in search-time recovery.
