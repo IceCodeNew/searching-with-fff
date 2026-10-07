@@ -1,7 +1,0 @@
-{
-  "fff": {
-    "command": "fff-mcp",
-    "args": [],
-    "includeTools": ["find_files", "grep", "multi_grep"]
-  }
-}
